@@ -11,6 +11,7 @@ study("Engulfing Candles + EMA 50", overlay = true)
 // #########################
 
 sslLen=input(title="Period", defval=10)
+sslChanPlot = input(title="Plot SSL Channel", type=input.bool, defval=true)
 
 smaHighOrig = sma(high, sslLen)
 smaLowOrig = sma(low, sslLen)
@@ -23,15 +24,13 @@ Hlv := close > smaHigh ? 1 : close < smaLow ? -1 : Hlv[1]
 sslDown = Hlv < 0 ? smaHigh: smaLow
 sslUp   = Hlv < 0 ? smaLow : smaHigh
 
-plot(sslDown, title="SSL Down", linewidth=2, color=color.red)
-plot(sslUp, title="SSL Up", linewidth=2, color=color.lime)
+plot(sslChanPlot ? sslDown : na, title="SSL Down", linewidth=2, color=color.red)
+plot(sslChanPlot ? sslUp : na, title="SSL Up", linewidth=2, color=color.lime)
 
 bull = if sslUp > sslDown
-    1
+    1 // Bull set to 1 (true) if it is a bull market
 else
-    0
-    
-plot(bull)
+    0 // Bull set to 0 (false) if it is a bear market
     
 // #########################
 // #    SSL Channel End    #
