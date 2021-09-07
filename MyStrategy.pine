@@ -1,0 +1,209 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © sprrw
+
+//@version=4
+//study("My strategy", overlay = true)
+strategy("My strategy") //keep this commented out unless backtesting
+
+
+// #########################
+// #   SSL Channel Begin   #
+// #########################
+
+sslLen=input(title="Period", defval=10)
+sslChanPlot = input(title="Plot SSL Channel", type=input.bool, defval=true)
+
+smaHighOrig = sma(high, sslLen)
+smaLowOrig = sma(low, sslLen)
+
+smaHigh = security(syminfo.tickerid, "60", smaHighOrig)
+smaLow = security(syminfo.tickerid, "60", smaLowOrig)
+
+int Hlv = na
+Hlv := close > smaHigh ? 1 : close < smaLow ? -1 : Hlv[1]
+sslDown = Hlv < 0 ? smaHigh: smaLow
+sslUp   = Hlv < 0 ? smaLow : smaHigh
+
+plot(sslChanPlot ? sslDown : na, title="SSL Down", linewidth=2, color=color.red)
+plot(sslChanPlot ? sslUp : na, title="SSL Up", linewidth=2, color=color.lime)
+
+bull = if sslUp > sslDown
+    1 // Bull set to 1 (true) if it is a bull market
+else if sslDown > sslUp
+    0 // Bull set to 0 (false) if it is a bear market
+    
+// #########################
+// #    SSL Channel End    #
+// #########################
+
+// #########################
+// #     EMA 50 Begin      #
+// #########################
+
+ema50Plot = input(title="Plot EMA 50", type=input.bool, defval=true)
+len = input(50, minval=1, title="Length")
+src = input(close, title="Source")
+offset = input(title="Offset", type=input.integer, defval=0, minval=-500, maxval=500)
+ema50 = ema(src, len)
+plot(ema50Plot ? ema50 : na, title="EMA", color=color.blue, offset=offset)
+
+// #########################
+// #      EMA 50 End       #
+// #########################
+
+
+// #########################
+// #  PreEngulfing Begin   #
+// #########################
+
+directionIndicator = close[1] > open[1] ? 1 : -1
+directionIndicator += close[2] > open[2] ? 1 : -1
+directionIndicator += close[3] > open[3] ? 1 : -1
+//directionIndicator += close[4] > open[4] ? 1 : -1
+
+//plotchar(open[1], "Open")
+//plotchar(close[1], "Close")
+//plotchar(open[2], "Open2")
+//plotchar(close[2], "Close2")
+
+plotchar(directionIndicator, "Direction Indicator")
+
+
+// #########################
+// #   PreEngulfing End    #
+// #########################
+
+// #########################
+// #    Engulfing Begin    #
+// #########################
+
+engulfingPlot = input(title="Plot Engulfing", type=input.bool, defval=true)
+
+// bullish engulfing
+bullishEngulfing = open[1] > close[1]                ? 
+                   close > open                      ? 
+                   close >= open[1]                  ? 
+                   close[1] >= open                  ? 
+                   close - open > open[1] - close[1] ? 
+                   directionIndicator <= -2          ?
+                   //directionIndicator <= -4          ?
+                   1
+                   //color.yellow 
+                   : na : na : na : na : na : na
+barcolor(engulfingPlot ? bullishEngulfing ? color.yellow : na : na)
+
+// bearish engulfing
+bearishEngulfing = close[1] > open[1]                ? 
+                   open > close                      ? 
+                   open >= close[1]                  ? 
+                   open[1] >= close                  ? 
+                   open - close > close[1] - open[1] ? 
+                   directionIndicator >= 2           ?
+                   //rectionIndicator >= 4           ?
+                   1
+                   //color.purple 
+                   : na : na : na : na : na : na
+barcolor(engulfingPlot ? bearishEngulfing ? color.purple : na : na)
+
+
+    
+
+//alertcondition(bullishEngulfing2 != na, title = "Bullish Engulfing", message = "[CurrencyPair] [TimeFrame], Bullish candle engulfing previous candle")
+//alertcondition(bearishEngulfing2 != na , title = "Bearish Engulfing", message = "[CurrencyPair] [TimeFrame], Bearish candle engulfing previous candle")
+
+// #########################
+// #     Engulfing End     #
+// #########################
+
+// #########################
+// # Own Backtesting Start #
+// #########################
+
+// === INPUT BACKTEST RANGE === 
+FromMonth = input(defval = 1, title = "From Month", minval = 1, maxval = 12) 
+FromDay = input(defval = 1, title = "From Day", minval = 1, maxval = 31) 
+FromYear = input(defval = 2017, title = "From Year", minval = 2010)
+ToMonth = input(defval = 1, title = "To Month", minval = 1, maxval = 12) 
+ToDay = input(defval = 1, title = "To Day", minval = 1, maxval = 30) 
+ToYear = input(defval = 9999, title = "To Year", minval = 2021) 
+
+// === FUNCTION EXAMPLE === 
+start = timestamp(2010, 1, 1, 00, 00) // backtest start window 
+finish = timestamp(2022, 12, 31, 23, 59) // backtest finish window 
+window() => time >= start and time <= finish ? true : false // create function "within window of time" 
+
+// === EXECUTION === //Keep this commented out unless backtesting
+
+plotchar(((close - low) * 2), "Profit")
+plotchar(((close - low) + 0.0002) * -1, "Loss")
+plotchar(bullishEngulfing, "bullishEngulfing")
+plotchar(bearishEngulfing, "bearishEngulfing")
+plotchar(bull, "bull")
+plotchar(crossover (close, ema50), "crossover")
+
+
+
+
+plotchar(sslDown, "sslDown1")
+plotchar(sslUp, "sslUp1")
+plotchar(sslDown[1], "sslDown2")
+plotchar(sslUp[1], "sslUp2")
+
+sslGoingUp = if sslUp > sslDown and sslUp[1] < sslDown[1]
+    true
+slLow = low
+slLow := low[1] < low ? low[1] : slLow
+slLow := low[2] < low[1] ? low[2] : slLow
+slLow := low[3] < low[2] ? low[3] : slLow
+    
+
+plotchar(slLow, "slLow")
+
+barcolor(sslGoingUp ? color.yellow : na)
+
+limit = close + ((close - slLow) * 2)
+stop = slLow
+plotchar(limit, "limit")
+plotchar(stop, "stop")
+
+if sslGoingUp
+    strategy.entry("L", strategy.long, 10)
+    strategy.exit("exit", "L", limit = limit, stop = stop)
+
+//limit = close + ((close - open) * 2)
+//stop = low - (low * 0.001)
+//plotchar(limit, "limit")
+//plotchar(stop, "stop")
+
+//if bullishEngulfing and bull and crossover (close, ema50) and directionIndicator == -3
+//if bullishEngulfing and crossover (close, ema50) and directionIndicator == -3
+    //strategy.entry("L", strategy.long, 25000, when = window())
+    
+    //strategy.entry("L", strategy.long, 25000)
+    //strategy.exit("exit", "L", limit = limit, stop = stop)
+
+    
+//if bearishEngulfing and crossover (close, ema50) and directionIndicator == 3
+    //strategy.entry("L", strategy.long, 25000, when = window())
+    
+    //strategy.entry("S", strategy.long, 25000)
+    //strategy.exit("exit", "S", profit = (((high - close) * 1.5) * 10000), loss = ((high - close) + 0.0004) * 10000)
+
+    
+//if bearishEngulfing
+//    strategy.entry("S", strategy.short, 25000, when = window())
+//    strategy.exit("exit", "S", limit = ((high - close) * 2) + close, stop = high + 2)
+    
+//strategy.entry("L", strategy.long, 25000, when = bullishEngulfing == 1 and window()) // buy long when "within window of time" AND crossover 
+//strategy.exit("exit", "L", profit = 1, loss = 1)
+
+//strategy.entry("S", strategy.short, 25000, when = bearishEngulfing == 1 and window()) // buy long when "within window of time" AND crossover 
+//strategy.exit("exit", "S", profit = 1, loss = 1)
+
+// #########################
+// #  Own Backtesting End  #
+// #########################
+
+
+
+
